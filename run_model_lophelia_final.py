@@ -4,7 +4,7 @@
 """
 Created on Thu Mar 24 15:39:40 2022
 
-@author: Graem
+@author: Graeme
 """
 
 from parcels import FieldSet, Field, ParticleSet, JITParticle, AdvectionRK4_3D, ParticleFile, Variable, ParcelsRandom
