@@ -8,7 +8,7 @@ This script uses OceanParcels for 3D lagrangian particle tracking
 This script uses the particle tracking output to create connectivity matrices
 
 ## cluster_grouping_multi_year.py
-This script plots connectivity matrices
+This script uses igraph and the Leiden algorithm to cluster nodes
 
 ## graph_theory_analysis.py
-This script uses NetworkX to calculate connectivity metrics and the Leiden algorithm to cluster nodes
+This script uses networkx and igraph to calculate connectivity metrics
