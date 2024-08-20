@@ -7,7 +7,7 @@ This script uses OceanParcels for 3D lagrangian particle tracking
 ## create_connectivity_matrix_multi_year.py
 This script uses the particle tracking output to create connectivity matrices
 
-## plot_connectivity_matrix_multi_year.py
+## cluster_grouping_multi_year.py
 This script plots connectivity matrices
 
 ## graph_theory_analysis.py
