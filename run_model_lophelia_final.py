@@ -19,7 +19,7 @@ from operator import attrgetter
 '''Set Parameters'''
 year_arr=['2005'] #, '2006', '2007', '2008', '2009','2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019']  #trial years
 dep_arr= ['Seabed']
-season_arr=['January','March','May','July','September','November'] #['Spring','Summer','Fall','Winter']# different seasons
+season_arr=['January','February','March','April','May','June','July','August','September','October','November','December']# different months
 cell_size= '0.1'
 particle_space = ['0.01', '0.005', '0.003', '0.0001'] #unit:degree
 dt='10'  #time step minutes
@@ -54,7 +54,23 @@ def TotalDistance(particle, fieldset, time):
 def DeleteParticle(particle, fieldset, time):
     particle.delete()
 
+#Larval behaviour 1
+def VertVel(particle, fieldset, time): #add sink and swim speeds
+    swim_speed = -0.00088/(60*86400)*time #m/s #Stromberg and Larssson 2017 linear increase in swimming velocity
+    sink_speed = 0.00088/(60*86400)*time
+    
+    if time > 0 and time < 86400*30 and particle.depth > 5:
+        particle.depth += swim_speed * particle.dt
+        particle.particle_swim = swim_speed
+    if time > 30:
+        particle.particle_swim = 0
+        
+    if time >= 86400*30:
+        particle.depth += sink_speed * particle.dt
+        particle.particle_sink = sink_speed     
 
+'''
+#Larval behaviour 2
 def VertVel(particle, fieldset, time): #add sink and swim speeds
     swim_speed_mean = -0.00072 #m/s #Stromberg and Larssson 2017
     swim_speed_sd = 0.00018 #m/s
@@ -70,7 +86,7 @@ def VertVel(particle, fieldset, time): #add sink and swim speeds
         sink = ParcelsRandom.normalvariate(sink_speed_mean, sink_speed_sd)
         particle.depth += sink * particle.dt
         particle.particle_sink = sink
-
+'''
         
 data_path = '/home/gguy/projects/def-metaxas/gguy/ComputeCanada/' 
 input_netCDF = 'BNAM/'
