@@ -1,4 +1,4 @@
-# Test
+# MSc-Connectivity-Analyses
 This code accompanies the manuscript - Stable connections in the deep sea: Temporally consistent larval pathways for the deep-sea coral, *Lophelia pertusa* (=*Desmophyllum pertusum*) in the Northwest Atlantic Ocean - published in Deep Sea Research Part I 
 
 ## run_model_lophelia_final.py
