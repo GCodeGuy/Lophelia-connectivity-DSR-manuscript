@@ -17,21 +17,21 @@ from netCDF4 import Dataset
 from operator import attrgetter
 
 '''Set Parameters'''
-year_arr=['2005'] #, '2006', '2007', '2008', '2009','2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019']  #trial years
-dep_arr= ['Seabed']
-season_arr=['January','February','March','April','May','June','July','August','September','October','November','December']# different months
+year_arr=['2005'] #, '2006', '2007', '2008', '2009','2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019'] #particle release years
+dep_arr= ['Seabed'] #particle release depth
+season_arr=['January','February','March','April','May','June','July','August','September','October','November','December']# particle release months
 cell_size= '0.1'
-particle_space = ['0.01', '0.005', '0.003', '0.0001'] #unit:degree
+particle_space = ['0.01', '0.005', '0.003', '0.0001'] #particle spacing, unit:degree
 dt='10'  #time step minutes
 day1='1' #output results days
-day2='60' #final duration
+day2='60' #final duration or PLD
 repeat = '0' #release particles every x days
-kh='VARkh'
-Area = 'Lophelia_final_run' #'FCBB' 
-vertvel='VARvel'
+kh='VARkh' #horizontal diffusivity
+Area = 'Lophelia_final_run' # coordinate file for coral locations
+vertvel='VARvel' #option for larval behaviour 1 or 2
 
 
-class DistParticle(JITParticle):  # Define a new particle class that contains three extra variables
+class DistParticle(JITParticle):  # Define a new particle class that for distance travelled and sink and swim velocities
     distance = Variable('distance', initial=0., dtype=np.float32)  # the distance travelled
     prev_lon = Variable('prev_lon', dtype=np.float32, to_write=False,
                         initial=attrgetter('lon'))  # the previous longitude
@@ -55,7 +55,7 @@ def DeleteParticle(particle, fieldset, time):
     particle.delete()
 
 #Larval behaviour 1
-def VertVel(particle, fieldset, time): #add sink and swim speeds
+def VertVel(particle, fieldset, time): #parameterize particle behaviour for linear increase through developement
     swim_speed = -0.00088/(60*86400)*time #m/s #Stromberg and Larssson 2017 linear increase in swimming velocity
     sink_speed = 0.00088/(60*86400)*time
     
@@ -88,10 +88,10 @@ def VertVel(particle, fieldset, time): #add sink and swim speeds
         particle.particle_sink = sink
 '''
         
-data_path = '/home/gguy/projects/def-metaxas/gguy/ComputeCanada/' 
+data_path = '/home/gguy/projects/def-metaxas/gguy/ComputeCanada/' #path to hydrodynamic flow fields
 input_netCDF = 'BNAM/'
-domain_resolution = np.loadtxt(data_path +"Particle_Info/Domain_resolution_in_x.txt") #in metres
-domain_lat = np.loadtxt(data_path +"Particle_Info/Domain_latp.txt")
+domain_resolution = np.loadtxt(data_path +"Particle_Info/Domain_resolution_in_x.txt") # Longitudinal resolution of modeled flow fields in metres
+domain_lat = np.loadtxt(data_path +"Particle_Info/Domain_latp.txt") #latitudinal resolution
 for idx_y in range(len(year_arr)):
     year=year_arr[idx_y]
     print("Year is %s"%year)
@@ -102,11 +102,11 @@ for idx_y in range(len(year_arr)):
         for idx_s in range(len(season_arr)):
             season = season_arr[idx_s]
             print("Season is %s"%season)
-            ufiles = sorted(glob(data_path+input_netCDF+year+'/'+season+'/'+'3DCurrents_U*.nc'))
-            vfiles = sorted(glob(data_path+input_netCDF+year+'/'+season+'/'+'3DCurrents_V*.nc'))
-            wfiles = sorted(glob(data_path+input_netCDF+year+'/'+season+'/'+'3DCurrents_W*.nc'))
+            ufiles = sorted(glob(data_path+input_netCDF+year+'/'+season+'/'+'3DCurrents_U*.nc')) #flow fields in u
+            vfiles = sorted(glob(data_path+input_netCDF+year+'/'+season+'/'+'3DCurrents_V*.nc')) #flow fields in v
+            wfiles = sorted(glob(data_path+input_netCDF+year+'/'+season+'/'+'3DCurrents_W*.nc')) #flow fields in w
             mesh_mask =  data_path+input_netCDF+year+'/'+'3DCurrents_mask_'+year+'_BNAM.nc'
-            order_1= [2,3,0,1,4,5] #order for Jan,Mar,July,Oct
+            order_1= [2,3,0,1,4,5] #order for Jan,Mar,July,Oct  #reorder flowfields to correct temporal order
             order_2 = [2,3,4,5,0,1] #order for Feb,Aug
             order_3 = [0,1,4,5,2,3] #order for April, August
             order_4 = [4,5,2,3,0,1] #order for May, June, Sept, Oct
@@ -144,7 +144,7 @@ for idx_y in range(len(year_arr)):
             variables = {'U': 'U',
                          'V': 'V',
                          'W': 'W'}
-            dimensions = {'U': {'lon': 'glamf', 'lat': 'gphif', 'depth': 'deptht', 'time': 'time_counter'},
+            dimensions = {'U': {'lon': 'glamf', 'lat': 'gphif', 'depth': 'deptht', 'time': 'time_counter'}, #specify dimentions
                           'V': {'lon': 'glamf', 'lat': 'gphif', 'depth': 'deptht', 'time': 'time_counter'},
                           'W': {'lon': 'glamf', 'lat': 'gphif', 'depth': 'deptht', 'time': 'time_counter'}}
 
@@ -155,8 +155,8 @@ for idx_y in range(len(year_arr)):
             kh_zonal = dataset.variables['fmask'][0,:,:,:]  
             kh_meridional = dataset.variables['fmask'][0,:,:,:]
                         
-            kh_z = (0.0103*(domain_resolution*100)**(4/3))/10000
-            kh_m = (0.0103*(domain_resolution*100)**(4/3))/10000
+            kh_z = (0.0103*(domain_resolution*100)**(4/3))/10000 #calculate domain specific verticle diffusion
+            kh_m = (0.0103*(domain_resolution*100)**(4/3))/10000 #calculate domain specific horizontal diffusion
             
             fieldset.add_constant("dres", 0.01)
             fieldset.add_field(Field('Kh_zonal', kh_zonal*kh_z, depth=fieldset.U.grid.depth,lat=fieldset.U.grid.lat, 
@@ -164,7 +164,7 @@ for idx_y in range(len(year_arr)):
             fieldset.add_field(Field('Kh_meridional', kh_meridional*kh_m, depth=fieldset.U.grid.depth,lat=fieldset.U.grid.lat, 
                                                   lon=fieldset.U.grid.lon,  mesh='spherical')) 
 
-            lonp = np.loadtxt(data_path +"Particle_Info/"+Area+' lonp '+cell_size+"cell size "+particle_space+"space.txt")
+            lonp = np.loadtxt(data_path +"Particle_Info/"+Area+' lonp '+cell_size+"cell size "+particle_space+"space.txt") #load in initial coordinates and depth of particles
             latp = np.loadtxt(data_path +"Particle_Info/"+Area+' latp '+cell_size+"cell size "+particle_space+"space.txt")
             depth = np.loadtxt(data_path +"Particle_Info/"+Area+' depth '+cell_size+"cell size "+particle_space+"space.txt")
              
@@ -174,7 +174,7 @@ for idx_y in range(len(year_arr)):
             tot=len(lonp)
             print ('Total particles: ',tot)
             #depth = -np.ones(len(lonp))*3
-            repeatdt=delta(days=20)
+            #repeatdt=delta(days=20) #option to for release frequency
             pset = ParticleSet.from_list(fieldset=fieldset, pclass=DistParticle, 
                                          lon=lonp,
                                          lat=latp,
@@ -184,7 +184,7 @@ for idx_y in range(len(year_arr)):
             pfile = ParticleFile('/home/gguy/projects/def-metaxas/gguy/ComputeCanada/Output/'+Area+dep+"_"+year+season+day2+"days_"+day1+"days_"+repeat+"repeatdt_"+dt+"minutes_"+cell_size+"cell_"+particle_space+"degree_"+str(tot)+"_B"+kh+vertvel,
                                      pset, outputdt=delta(days=int(day1)))
      
-    
+            #run kernel to track particles
             kernels = pset.Kernel(TotalDistance) + DiffusionUniformKh + AdvectionRK4_3D + pset.Kernel(VertVel) ##+pset.Kernel(variable_kh)
             pset.execute(kernels, runtime=delta(days=int(day2)), dt=delta(minutes=int(dt)), recovery={ErrorCode.ErrorOutOfBounds: DeleteParticle},
                          output_file=pfile) 
